@@ -28,10 +28,23 @@ module.exports = {
   },
 
   read: async function(){
-    return await fs.readJson("foodCache.json");
+    var params = {
+      Bucket: bucket,
+      Key: fname
+    }
+
+    var ret = await S3.getObject(params).promise();
+    return ret.Body.toString('utf8');
   },
 
   write: async function(obj){
-    await fs.writeJson("foodCache.json", JSON.stringify(obj));
+    var params = {
+      Bucket: bucket,
+      Key: fname,
+      Body: JSON.stringify(obj)
+    }
+
+    var ret = await S3.putObject(params).promise();
+    console.log(ret);
   }
 }
