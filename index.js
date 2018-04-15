@@ -48,11 +48,54 @@ function getFoodsThatMatch(allFoods, lookingFor){
 
 }
 
+function getResponseForPeriod(period){
+  var text = "For " + period.name + ": ";
+
+  if(period.length == 0) return text + "no food matches. "
+
+  for(var i = 0; i < period.food.length; i++){
+    if(i > 0 && i == period.food.length - 1){
+      text += "and "
+    }
+    text += period.food[i].name;
+    text += (i != period.food.length - 1) ? ", " : ". ";
+  }
+
+  return text;
+}
+
+function getResponseTextForHall(hall){
+  var text = "In " + hall.name + ": ";
+
+  if (hall.length == 0) return text + " no food matches. "
+
+  for(var i = 0; i < hall.periods.length; i++){
+    if(i > 0 && i == hall.periods.length - 1){
+      text += "And "
+    }
+    text += getResponseForPeriod(hall.periods[i]);
+  }
+
+  return text;
+}
+
+function getResponseText(foods, lookingFor){
+  if(foods.length == 0) return "It looks like " + lookingFor + " isn't being served today.";
+
+  var text = "";
+  for(var i = 0; i<foods.length; i++){
+    text += getResponseTextForHall(foods[i]);
+  }
+  return text;
+}
+
 async function test(){
   allfood = (await getFood());
   //console.log(allfood);
 
-  console.log(getFoodsThatMatch(allfood, "sushi"));
+  var s = getFoodsThatMatch(allfood, "ravioli");
+
+  console.log(getResponseText(s, "sushi"));
 }
 
 const handlers = {
@@ -60,6 +103,7 @@ const handlers = {
 
     console.log("A")
     var slotValue = this.event.request.intent.slots.Food.value;
+    console.log("Slot value: " + slotValue);
 
     if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
       this.emit('AMAZON.HelpIntent');
@@ -80,7 +124,7 @@ const handlers = {
 
     console.log("E")
 
-    this.response.speak(matchingFood.length==0?"No":"Yes");
+    this.response.speak(getResponseText(matchingFood, slotValue));
     this.emit(':responseReady');
   },
   'LaunchRequest': function(){
