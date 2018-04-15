@@ -41,7 +41,7 @@ function nicematch(contains, search){
     searchArr = searchArr.concat(foodGroups[search]);
   }
 
-  return searchArr.some(s=>contains.toLowerCase().match("\\b"+s.toLowerCase()+"\\b"));
+  return searchArr.some(s=>contains.toLowerCase().match("\\b"+s.toLowerCase()));
 }
 
 function isFood(potentialFood, lookingFor){
@@ -222,6 +222,7 @@ function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, e
 
 const handlers = {
   'IsBeingServedIntent': async function(){
+    const SKILL_NAME = "DinDin";
 
     var slotValue = this.event.request.intent.slots.Food.value;
 
@@ -236,14 +237,13 @@ const handlers = {
     var allfood = await getFood();
 
     var filteredFoods = doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, excludeIngredients);
+    var speechOutput = filteredFoods;
 
-    if(typeof(filteredFoods) === "string"){
-      this.response.speak(filteredFoods);
-    } else{
-      this.response.speak(getResponseText(filteredFoods, slotValue));
+    if(typeof(filteredFoods) !== "string"){
+      speechOutput = getResponseText(filteredFoods, slotValue);
     }
 
-    this.emit(':responseReady');
+    this.emit(':tellWithCard', speechOutput, SKILL_NAME, speechOutput);
   },
   'LaunchRequest': function(){
     this.emit('AMAZON.HelpIntent');
