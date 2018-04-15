@@ -25,6 +25,12 @@ function uniq(a) {
     });
 }
 
+function containsFilter(food, filter){
+  return food.filters.some(oneFil=>{
+    return oneFil.name.toLowerCase() === filter.toLowerCase();
+  })
+}
+
 function nicematch(contains, search){
   if (typeof(contains) !== "string") {
     return false;
@@ -35,7 +41,7 @@ function nicematch(contains, search){
     searchArr = searchArr.concat(foodGroups[search]);
   }
 
-  return searchArr.some(s=>contains.toLowerCase().match("\\b"+s+"\\b"));
+  return searchArr.some(s=>contains.toLowerCase().match("\\b"+s.toLowerCase()+"\\b"));
 }
 
 function isFood(potentialFood, lookingFor){
@@ -44,21 +50,25 @@ function isFood(potentialFood, lookingFor){
     || nicematch(potentialFood.desc, lookingFor);
 }
 
-function getFoodsInPeriod(period, lookingFor){
+function getFoodsInPeriod(period, lookingFor, foodFilters){
   var a =
     uniq(period.categories.flatMap(category=>{
-      return category.items.filter(item=>isFood(item, lookingFor));
+      var ret = category.items;
+      for(var i = 0; i < foodFilters.length; i++){
+        ret = ret.filter(foodFilters[i]);
+      }
+      return ret;
     }));
   return a;
 }
 
-function getFoodsFromHall(dhall, lookingFor, perFilters){
+function getFoodsFromHall(dhall, lookingFor, perFilters, foodFilters){
 
   if (typeof(dhall.menu) === "undefined") return [];
   var periods = dhall.menu.periods.map(period=>{
     return {
       name: period.name,
-      food: getFoodsInPeriod(period, lookingFor)
+      food: getFoodsInPeriod(period, lookingFor, foodFilters)
     };
   });
 
@@ -69,11 +79,11 @@ function getFoodsFromHall(dhall, lookingFor, perFilters){
   return periods;
 }
 
-function getFoodsThatMatch(allFoods, lookingFor, hallFilters, perFilters){
+function getFoodsThatMatch(allFoods, lookingFor, hallFilters, perFilters, foodFilters){
   hallsWithFood = allFoods.map(hall=>{
     return {
       name: hall.name,
-      periods: getFoodsFromHall(hall, lookingFor, perFilters)
+      periods: getFoodsFromHall(hall, lookingFor, perFilters, foodFilters)
     };
   });
 
@@ -118,7 +128,7 @@ function getResponseTextForHall(hall){
 }
 
 function getResponseText(foods, lookingFor){
-  if(foods.length == 0) return "It looks like " + lookingFor + " isn't being served today.";
+  if(foods.length == 0) return "It looks like " + lookingFor + " that matches your filters isn't being served today.";
 
   var text = "";
   for(var i = 0; i<foods.length; i++){
@@ -128,14 +138,15 @@ function getResponseText(foods, lookingFor){
 }
 
 async function test(){
-  allfood = (await getFood());
-  //console.log(allfood);
+  var allfood = await getFood();
 
-  var s = getFoodsThatMatch(allfood, "soup", [hall=>(hall.periods.length > 0)], [period=>(period.food.length > 0)]);
-  console.log(s[0].periods)
+  var s = doSearch(allfood, "soup", undefined, "Dinner", "vegetarian", "Corn mushrooms");
+//  console.log(s[0].periods)
 
   console.log(getResponseText(s, "tea"));
 }
+
+test();
 
 hallRewrites = {
   "stetson east":"levine marketplace",
@@ -148,61 +159,91 @@ function isDiningHall(allFoods, toCheck){
   return allFoods.some(hall=>hall.name.trim().toLowerCase() === toCheck);
 }
 
+function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, excludeIngredients){
+
+  var lookingFor = slotValue.trim().toLowerCase();
+
+  if(lookingFor.slice(-1) == "s"){
+    lookingFor = lookingFor.substring(0, lookingFor.length - 1);
+  }
+
+  var hallFilters = [hall=>(hall.periods.length > 0)];
+  var perFilters = [period=>(period.food.length > 0)];
+  var foodFilters = [item=>isFood(item, lookingFor)];
+
+
+  if(typeof(restrictHall) === "string"){
+    var o = restrictHall;
+    if(!isDiningHall(allfood, restrictHall.trim().toLowerCase())){
+      restrictHall = hallRewrites[restrictHall];
+    }
+
+    if(typeof(restrictHall) === "undefined"){
+      return o + " is not a valid dining hall.";
+    }
+
+    hallFilters.push(hall => (hall.name.toLowerCase() === restrictHall.toLowerCase()));
+  }
+
+  if(typeof(restrictMeal) === "string"){
+    if(!["breakfast","lunch","dinner"].includes(restrictMeal.toLowerCase())){
+      return restrictMeal + " is not a valid meal period.";
+    }
+
+    perFilters.push(meal => (meal.name.toLowerCase() === restrictMeal.toLowerCase()));
+  }
+
+  if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
+    return "It doesn't seem that you provided a food to search for. Please try again.";
+  }
+
+  if(typeof(restrictVeg) === "string"){
+    foodFilters.push(food=>containsFilter(food, restrictVeg));
+  }
+
+  if(typeof(excludeIngredients) === "string"){
+    var excluded = excludeIngredients.split(" ")
+                                     .filter(food=>food.length>0)
+                                     .map(food=>food.slice(-1) == "s"?
+                                            food.substring(0, food.length - 1):
+                                            food);
+    foodFilters = foodFilters.concat(
+      excluded.map(filter=>{
+        return item=>{
+          return !isFood(item, filter) && !containsFilter(item, filter);
+        }
+      }));
+  }
+
+  var matchingFood = getFoodsThatMatch(allfood, lookingFor, hallFilters, perFilters, foodFilters);
+
+  return matchingFood;
+}
+
 
 const handlers = {
   'IsBeingServedIntent': async function(){
 
-
-    var allfood = await getFood();
-
-
     var slotValue = this.event.request.intent.slots.Food.value;
 
-    var hallFilters = [hall=>(hall.periods.length > 0)];
-    var perFilters = [period=>(period.food.length > 0)];
 
     var restrictHall =  this.event.request.intent.slots.Place.value;
     var restrictMeal =  this.event.request.intent.slots.Meal.value;
 
-    if(typeof(restrictHall) === "string"){
-      var o = restrictHall;
-      if(!isDiningHall(allfood, restrictHall.trim().toLowerCase())){
-        restrictHall = hallRewrites[restrictHall];
-      }
+    var restrictVeg = this.event.request.intent.slots.VFilter.value;
+    var excludeIngredients = this.event.request.intent.slots.ExcludeIngredients.value;
 
-      if(typeof(restrictHall) === "undefined"){
-        this.response.speak(o + " is not a valid dining hall.");
-        this.emit(':responseReady');
-        return;
-      }
 
-      hallFilters.push(hall => (hall.name.toLowerCase() === restrictHall.toLowerCase()));
+    var allfood = await getFood();
+
+    var filteredFoods = doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, excludeIngredients);
+
+    if(typeof(filteredFoods) === "string"){
+      this.response.speak(filteredFoods);
+    } else{
+      this.response.speak(getResponseText(filteredFoods, slotValue));
     }
 
-    if(typeof(restrictMeal) === "string"){
-      if(!["breakfast","lunch","dinner"].includes(restrictMeal.toLowerCase())){
-        this.response.speak(restrictMeal + " is not a valid meal period.");
-        this.emit(':responseReady');
-        return;
-      }
-
-      perFilters.push(meal => (meal.name.toLowerCase() === restrictMeal.toLowerCase()));
-    }
-
-    if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
-      this.emit('AMAZON.HelpIntent');
-      return;
-    }
-
-    var lookingFor = slotValue.trim().toLowerCase();
-
-    if(lookingFor.slice(-1) == "s"){
-      lookingFor = lookingFor.substring(0, lookingFor.length - 1);
-    }
-    var matchingFood = getFoodsThatMatch(allfood, lookingFor, hallFilters, perFilters);
-
-
-    this.response.speak(getResponseText(matchingFood, slotValue));
     this.emit(':responseReady');
   },
   'LaunchRequest': function(){
