@@ -160,6 +160,10 @@ function isDiningHall(allFoods, toCheck){
 
 function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, excludeIngredients){
 
+  if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
+    return "It doesn't seem that you provided a food to search for. Please try rephrasing your search.";
+  }
+
   var lookingFor = slotValue.trim().toLowerCase();
 
   if(lookingFor.slice(-1) == "s"){
@@ -190,10 +194,6 @@ function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, e
     }
 
     perFilters.push(meal => (meal.name.toLowerCase() === restrictMeal.toLowerCase()));
-  }
-
-  if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
-    return "It doesn't seem that you provided a food to search for. Please try again.";
   }
 
   if(typeof(restrictVeg) === "string"){
@@ -262,6 +262,7 @@ const handlers = {
 
 exports.handler = function (event, context, callback) {
     const alexa = Alexa.handler(event, context, callback);
+    alexa.appId = "amzn1.ask.skill.c857c13e-1052-45ab-b590-e1a7a5546407";
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
