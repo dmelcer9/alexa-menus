@@ -45,10 +45,11 @@ function isFood(potentialFood, lookingFor){
 }
 
 function getFoodsInPeriod(period, lookingFor){
-  return
+  var a =
     uniq(period.categories.flatMap(category=>{
       return category.items.filter(item=>isFood(item, lookingFor));
     }));
+  return a;
 }
 
 function getFoodsFromHall(dhall, lookingFor, perFilters){
@@ -61,6 +62,7 @@ function getFoodsFromHall(dhall, lookingFor, perFilters){
     };
   });
 
+    console.log(periods);
   for(var i = 0; i < perFilters.length; i++){
     periods = periods.filter(perFilters[i]);
   }
