@@ -62,7 +62,6 @@ function getFoodsFromHall(dhall, lookingFor, perFilters){
     };
   });
 
-    console.log(periods);
   for(var i = 0; i < perFilters.length; i++){
     periods = periods.filter(perFilters[i]);
   }
