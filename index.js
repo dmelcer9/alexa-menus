@@ -151,7 +151,8 @@ hallRewrites = {
   "stetson east":"levine marketplace",
   "stetson west":"stetson west eatery",
   "iv":"international village",
-  "west end":"the west end"
+  "west end":"the west end",
+  "laveen market place":"levine marketplace"
 }
 
 function isDiningHall(allFoods, toCheck){
