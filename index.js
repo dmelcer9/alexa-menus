@@ -206,19 +206,17 @@ const handlers = {
     this.emit(':responseReady');
   },
   'LaunchRequest': function(){
-    this.response.speak("This is a test");
-    this.emit(':responseReady');
+    this.emit('AMAZON.HelpIntent');
   },
   'AMAZON.HelpIntent': function () {
-    var speechOutput = "Help message"
-    var reprompt = "Help reprompt"
-    this.emit(':ask', speechOutput, reprompt);
+    var speechOutput = "Say something like, is ravioli being served today, or, is soup being served in international village for lunch";
+    this.emit(':tell', speechOutput);
   },
   'AMAZON.CancelIntent': function () {
-    this.emit(':tell', "Stop");
+    this.emit(':tell', "Exiting dining");
   },
   'AMAZON.StopIntent': function () {
-    this.emit(':tell', "Stop");
+    this.emit(':tell', "Exiting dining");
   }
 }
 
