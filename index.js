@@ -86,14 +86,14 @@ function getResponseText(foods, lookingFor){
   for(var i = 0; i<foods.length; i++){
     text += getResponseTextForHall(foods[i]);
   }
-  return text;
+  return text.split("&").join("and");
 }
 
 async function test(){
   allfood = (await getFood());
   //console.log(allfood);
 
-  var s = getFoodsThatMatch(allfood, "ravioli");
+  var s = getFoodsThatMatch(allfood, "soup");
 
   console.log(getResponseText(s, "sushi"));
 }
