@@ -12,9 +12,14 @@ Array.prototype.flatMap = function(f) {
 
 var getFood = require("./get-today-menu.js")(require("./awsbucketstrategy.js"));
 
+function nicematch(contains, search){
+  return (typeof(contains) === "string") && contains.toLowerCase().match("\\b"+search+"\\b");
+}
+
 function isFood(potentialFood, lookingFor){
-  return potentialFood.name.toLowerCase().indexOf(lookingFor) != -1
-    || potentialFood.ingredients.toLowerCase().indexOf(lookingFor) != -1;
+  return nicematch(potentialFood.name, lookingFor)
+    || nicematch(potentialFood.ingredients, lookingFor)
+    || nicematch(potentialFood.desc, lookingFor);
 }
 
 function getFoodsInPeriod(period, lookingFor){
@@ -93,10 +98,13 @@ async function test(){
   allfood = (await getFood());
   //console.log(allfood);
 
-  var s = getFoodsThatMatch(allfood, "soup");
+  var s = getFoodsThatMatch(allfood, "tea");
 
-  console.log(getResponseText(s, "sushi"));
+  console.log(getResponseText(s, "tea"));
 }
+
+test();
+
 
 const handlers = {
   'IsBeingServedIntent': async function(){
