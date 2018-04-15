@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "alexa-sdk": "^1.0.25",
     "aws-sdk": "^2.224.1",
     "body-parser": "^1.18.2",
     "fs-extra": "^5.0.0",
