@@ -12,8 +12,21 @@ Array.prototype.flatMap = function(f) {
 
 var getFood = require("./get-today-menu.js")(require("./awsbucketstrategy.js"));
 
+var foodGroups = {
+  "soup":["bisque"]
+}
+
 function nicematch(contains, search){
-  return (typeof(contains) === "string") && contains.toLowerCase().match("\\b"+search+"\\b");
+  if (typeof(contains) !== "string") {
+    return false;
+  }
+
+  var searchArr = [search];
+  if(typeof(foodGroups[search]) !== "undefined"){
+    searchArr = searchArr.concat(foodGroups[search]);
+  }
+
+  return searchArr.some(s=>contains.toLowerCase().match("\\b"+s+"\\b"));
 }
 
 function isFood(potentialFood, lookingFor){
@@ -116,7 +129,8 @@ async function test(){
 hallRewrites = {
   "stetson east":"levine marketplace",
   "stetson west":"stetson west eatery",
-  "iv":"international village"
+  "iv":"international village",
+  "west end":"the west end"
 }
 
 function isDiningHall(allFoods, toCheck){
