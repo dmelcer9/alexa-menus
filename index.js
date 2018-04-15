@@ -28,7 +28,7 @@ function getFoodsInPeriod(period, lookingFor){
   });
 }
 
-function getFoodsFromHall(dhall, lookingFor){
+function getFoodsFromHall(dhall, lookingFor, perFilters){
 
   if (typeof(dhall.menu) === "undefined") return [];
   var periods = dhall.menu.periods.map(period=>{
@@ -38,18 +38,27 @@ function getFoodsFromHall(dhall, lookingFor){
     };
   });
 
-  return periods.filter(period=>(period.food.length > 0));
+  for(var i = 0; i < perFilters.length; i++){
+    periods = periods.filter(perFilters[i]);
+  }
+
+  return periods;
 }
 
-function getFoodsThatMatch(allFoods, lookingFor){
+function getFoodsThatMatch(allFoods, lookingFor, hallFilters, perFilters){
   hallsWithFood = allFoods.map(hall=>{
     return {
       name: hall.name,
-      periods: getFoodsFromHall(hall, lookingFor)
+      periods: getFoodsFromHall(hall, lookingFor, perFilters)
     };
   });
 
-  return hallsWithFood.filter(hall=>(hall.periods.length > 0));
+  for(var i = 0; i < hallFilters.length; i++){
+    hallsWithFood = hallsWithFood.filter(hallFilters[i]);
+  }
+
+
+  return hallsWithFood;
 
 }
 
@@ -98,39 +107,75 @@ async function test(){
   allfood = (await getFood());
   //console.log(allfood);
 
-  var s = getFoodsThatMatch(allfood, "tea");
+  var s = getFoodsThatMatch(allfood, "tea", [hall=>(hall.periods.length > 0)], [period=>(period.food.length > 0)]);
+  console.log(isDiningHall(allfood, "stetson west eatery"));
 
   console.log(getResponseText(s, "tea"));
 }
 
-test();
+hallRewrites = {
+  "stetson east":"levine marketplace",
+  "stetson west":"stetson west eatery",
+  "iv":"international village"
+}
+
+function isDiningHall(allFoods, toCheck){
+  return allFoods.some(hall=>hall.name.trim().toLowerCase() === toCheck);
+}
 
 
 const handlers = {
   'IsBeingServedIntent': async function(){
 
-    console.log("A")
+
+    var allfood = await getFood();
+
+
     var slotValue = this.event.request.intent.slots.Food.value;
-    console.log("Slot value: " + slotValue);
+
+    var hallFilters = [hall=>(hall.periods.length > 0)];
+    var perFilters = [period=>(period.food.length > 0)];
+
+    var restrictHall =  this.event.request.intent.slots.Place.value;
+    var restrictMeal =  this.event.request.intent.slots.Meal.value;
+
+    if(typeof(restrictHall) === "string"){
+      var o = restrictHall;
+      if(!isDiningHall(allfood, restrictHall.trim().toLowerCase())){
+        restrictHall = hallRewrites[restrictHall];
+      }
+
+      if(typeof(restrictHall) === "undefined"){
+        this.response.speak(o + " is not a valid dining hall.");
+        this.emit(':responseReady');
+        return;
+      }
+
+      hallFilters.push(hall => (hall.name.toLowerCase() === restrictHall.toLowerCase()));
+    }
+
+    if(typeof(restrictMeal) === "string"){
+      if(!["breakfast","lunch","dinner"].includes(restrictMeal.toLowerCase())){
+        this.response.speak(restrictMeal + " is not a valid meal period.");
+        this.emit(':responseReady');
+        return;
+      }
+
+      perFilters.push(meal => (meal.name.toLowerCase() === restrictMeal.toLowerCase()));
+    }
 
     if(typeof(slotValue) !== "string" || slotValue.trim().length == 0){
       this.emit('AMAZON.HelpIntent');
       return;
     }
-    console.log("B")
 
     var lookingFor = slotValue.trim().toLowerCase();
 
     if(lookingFor.slice(-1) == "s"){
       lookingFor = lookingFor.substring(0, lookingFor.length - 1);
     }
-    console.log("C")
+    var matchingFood = getFoodsThatMatch(allfood, lookingFor, hallFilters, perFilters);
 
-    var allfood = await getFood();
-    console.log("D")
-    var matchingFood = getFoodsThatMatch(allfood, lookingFor);
-
-    console.log("E")
 
     this.response.speak(getResponseText(matchingFood, slotValue));
     this.emit(':responseReady');
