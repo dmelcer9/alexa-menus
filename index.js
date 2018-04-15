@@ -16,6 +16,15 @@ var foodGroups = {
   "soup":["bisque"]
 }
 
+function uniq(a) {
+    var seen = {};
+    return a.filter(food=>{
+      var notSeenAlready = (typeof(seen[food.name]) === "undefined");
+      seen[food.name] = true;
+      return notSeenAlready
+    });
+}
+
 function nicematch(contains, search){
   if (typeof(contains) !== "string") {
     return false;
@@ -36,9 +45,10 @@ function isFood(potentialFood, lookingFor){
 }
 
 function getFoodsInPeriod(period, lookingFor){
-  return period.categories.flatMap(category=>{
-    return category.items.filter(item=>isFood(item, lookingFor));
-  });
+  return
+    uniq(period.categories.flatMap(category=>{
+      return category.items.filter(item=>isFood(item, lookingFor));
+    }));
 }
 
 function getFoodsFromHall(dhall, lookingFor, perFilters){
@@ -120,8 +130,8 @@ async function test(){
   allfood = (await getFood());
   //console.log(allfood);
 
-  var s = getFoodsThatMatch(allfood, "tea", [hall=>(hall.periods.length > 0)], [period=>(period.food.length > 0)]);
-  console.log(isDiningHall(allfood, "stetson west eatery"));
+  var s = getFoodsThatMatch(allfood, "soup", [hall=>(hall.periods.length > 0)], [period=>(period.food.length > 0)]);
+  console.log(s[0].periods)
 
   console.log(getResponseText(s, "tea"));
 }
