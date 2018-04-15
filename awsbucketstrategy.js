@@ -1,7 +1,5 @@
 var AWS = require('aws-sdk');
 AWS.config.update({region:"us-east-1"});
-AWS.config.credentials =
-    new AWS.SharedIniFileCredentials({ profile: 'default' });
 
 var S3 = new AWS.S3();
 const bucket = "dining-cache";
