@@ -146,7 +146,6 @@ async function test(){
   console.log(getResponseText(s, "tea"));
 }
 
-test();
 
 hallRewrites = {
   "stetson east":"levine marketplace",
