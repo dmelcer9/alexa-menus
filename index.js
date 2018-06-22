@@ -1,4 +1,13 @@
-const Alexa = require('alexa-sdk');
+const Alexa = require('ask-sdk-v1adapter');
+
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./firebase-key.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://alexa-dining.firebaseio.com"
+});
 
 const concat = (x,y) =>
   x.concat(y)
@@ -220,6 +229,74 @@ function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, e
   return matchingFood;
 }
 
+function procesString(str){
+  return str.toLowerCase().split(" ").join("").split(".").join("");
+}
+
+function getFavoritesFromDB(userId){
+
+
+  var db = admin.database();
+
+  var ref = db.ref(procesString(userId)).orderByValue();
+
+  return new Promise((accept, reject)=>{
+    ref.once("value", function(value){
+      const favorites = [];
+      value.forEach(node=>{
+        favorites.push(node.val());
+      });
+      db.goOffline();
+      accept(favorites);
+    }, (error)=>{
+      reject(error);
+      db.goOffline();
+    });
+  })
+}
+
+function addFavoriteToDB(userId, favorite){
+  var db = admin.database();
+  var ref = db.ref(procesString(userId));
+
+  return new Promise((accept, reject)=>{
+      ref.push({
+        realName: favorite,
+        shortName: procesString(favorite)
+      }, (error)=>{
+        db.goOffline();
+        if(error){
+          reject(error);
+        } else{
+          accept();
+        }
+      });
+  });
+}
+
+function removeFavoriteFromDB(userId, favorite){
+  var db = admin.database();
+  var ref = db.ref(procesString(userId));
+  return new Promise((accept, reject)=>{
+    ref.orderByChild("shortName").equalTo(procesString(favorite)).once("value", (snapshot)=>{
+      snapshot.forEach(node=>{
+        node.ref.remove();
+      });
+      db.goOffline();
+      accept();
+
+    }, ()=>{
+      db.goOffline();
+      reject();});
+  });
+
+}
+
+async function removeAllFromDB(userId){
+  var db = admin.database();
+  var ref = db.ref(procesString(userId));
+  return await ref.remove();
+}
 
 const handlers = {
   'IsBeingServedIntent': async function(){
@@ -246,24 +323,41 @@ const handlers = {
 
     this.emit(':tellWithCard', speechOutput, SKILL_NAME, speechOutput);
   },
+  'AddFoodIntent':function(){
+    if(this.event.request.dialogState !== "COMPLETED"){
+      this.emit(':delegate')
+    } else {
+      const food = this.event.request.slots.food.value;
+      addFavoriteToDB(this.event.context.System.user.userId, food);
+      this.emit('Ok, I added ' + food + ' to your favorites.');
+    }
+  },
   'LaunchRequest': function(){
     this.emit('AMAZON.HelpIntent');
   },
-  'AMAZON.HelpIntent': function () {
+  'AMAZON.HelpIntent': async function () {
+    console.log("Test1");
+    await addFavoriteToDB(this.event.context.System.user.userId, "Test");
     var speechOutput = "Say something like, is ravioli being served today, or, is soup being served in international village for lunch";
     this.emit(':tell', speechOutput);
+    console.log("Test2");
   },
   'AMAZON.CancelIntent': function () {
     this.emit(':tell', "Exiting dining");
   },
   'AMAZON.StopIntent': function () {
     this.emit(':tell', "Exiting dining");
+  },
+  'SessionEndedRequest': function () {
+    //Do nothing
   }
 }
 
-exports.handler = function (event, context, callback) {
-    const alexa = Alexa.handler(event, context, callback);
+exports.handler = function (event, context) {
+    console.log(JSON.stringify(event));
+    const alexa = Alexa.handler(event, context);
     alexa.appId = "amzn1.ask.skill.c857c13e-1052-45ab-b590-e1a7a5546407";
     alexa.registerHandlers(handlers);
     alexa.execute();
+
 };
