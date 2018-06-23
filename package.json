@@ -1,20 +1,32 @@
 {
-  "name": "dartmouth",
+  "name": "aws-nodejs-typescript",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Serverless webpack example using Typescript",
+  "main": "handler.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "ask-sdk": "^2.0.6",
-    "ask-sdk-v1adapter": "^2.0.6",
-    "aws-sdk": "^2.224.1",
-    "body-parser": "^1.18.2",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/fs-extra": "^5.0.3",
+    "ask-sdk": "^2.0.7",
+    "ask-sdk-core": "^2.0.7",
+    "aws-sdk": "^2.263.1",
     "firebase-admin": "^5.12.1",
-    "fs-extra": "^5.0.0",
-    "node-fetch": "^2.1.2"
-  }
+    "fs-extra": "^6.0.1",
+    "node-fetch": "^2.1.2",
+    "source-map-support": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "0.0.22",
+    "@types/node": "^8.10.20",
+    "@types/node-fetch": "^2.1.1",
+    "serverless": "^1.27.3",
+    "serverless-webpack": "^4.0.0",
+    "ts-loader": "^2.3.7",
+    "typescript": "^2.5.2",
+    "webpack": "^3.6.0"
+  },
+  "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
+  "license": "MIT"
 }

@@ -229,74 +229,7 @@ function doSearch(allfood, slotValue, restrictHall, restrictMeal, restrictVeg, e
   return matchingFood;
 }
 
-function procesString(str){
-  return str.toLowerCase().split(" ").join("").split(".").join("");
-}
 
-function getFavoritesFromDB(userId){
-
-
-  var db = admin.database();
-
-  var ref = db.ref(procesString(userId)).orderByValue();
-
-  return new Promise((accept, reject)=>{
-    ref.once("value", function(value){
-      const favorites = [];
-      value.forEach(node=>{
-        favorites.push(node.val());
-      });
-      db.goOffline();
-      accept(favorites);
-    }, (error)=>{
-      reject(error);
-      db.goOffline();
-    });
-  })
-}
-
-function addFavoriteToDB(userId, favorite){
-  var db = admin.database();
-  var ref = db.ref(procesString(userId));
-
-  return new Promise((accept, reject)=>{
-      ref.push({
-        realName: favorite,
-        shortName: procesString(favorite)
-      }, (error)=>{
-        db.goOffline();
-        if(error){
-          reject(error);
-        } else{
-          accept();
-        }
-      });
-  });
-}
-
-function removeFavoriteFromDB(userId, favorite){
-  var db = admin.database();
-  var ref = db.ref(procesString(userId));
-  return new Promise((accept, reject)=>{
-    ref.orderByChild("shortName").equalTo(procesString(favorite)).once("value", (snapshot)=>{
-      snapshot.forEach(node=>{
-        node.ref.remove();
-      });
-      db.goOffline();
-      accept();
-
-    }, ()=>{
-      db.goOffline();
-      reject();});
-  });
-
-}
-
-async function removeAllFromDB(userId){
-  var db = admin.database();
-  var ref = db.ref(procesString(userId));
-  return await ref.remove();
-}
 
 const handlers = {
   'IsBeingServedIntent': async function(){
