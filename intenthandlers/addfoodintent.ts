@@ -7,17 +7,18 @@ export const AddFoodIntent: RequestHandler = {
         return handlerInput.requestEnvelope.request.type === "IntentRequest" &&
         handlerInput.requestEnvelope.request.intent.name === "AddFavoriteIntent";
     },
-    handle: (handlerInput) => {
+    handle: async (handlerInput) => {
 
         const request: IntentRequest = handlerInput.requestEnvelope.request as IntentRequest;
-        if (request.dialogState !== "COMPLETED") {
+        const slotState = request.intent.slots && request.intent.slots.food;
+        if (!slotState || slotState.confirmationStatus !== "CONFIRMED") {
             return handlerInput.responseBuilder.addDelegateDirective().getResponse();
          } else {
-             const food = request.intent.slots && request.intent.slots.food.value;
-             if (food) {
-                 addFavoriteToDB(handlerInput.requestEnvelope.context.System.user.userId, food);
-                 return handlerInput.responseBuilder.speak("Ok, I added " + food + " as a favorite.").getResponse();
-             }
+             const food = slotState.value;
+
+             await addFavoriteToDB(handlerInput.requestEnvelope.context.System.user.userId, food);
+             return handlerInput.responseBuilder.speak("Ok, I added " + food + " as a favorite.").getResponse();
+
          }
     },
 };

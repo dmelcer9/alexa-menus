@@ -2,49 +2,51 @@ import getFood from "./dining-api";
 import { ILocation } from "./diningInterface";
 import { ICacheStrategy, IMenuCache } from "./strategy";
 
-const cacheTimeoutMillis = 24 * 60 * 60 * 1000;
+const cacheTimeoutMillis = 7 * 24 * 60 * 60 * 1000;
 
-let memCache: IMenuCache | undefined;
+const memCache: IMultiMenuCacheType = {};
+
+interface IMultiMenuCacheType {
+  [date: string]: IMenuCache  | undefined;
+}
 
 function isValidCache(name: string, menuCache?: IMenuCache): boolean {
   const currentDate = new Date();
-  const currentDay = currentDate.getDay();
+  const currentDay = currentDate.getDate();
   const currentTime = currentDate.valueOf();
 
   if (!menuCache || menuCache === null) {
     console.log(name + " cache does not exist.");
     return false;
-  } else if (currentTime - memCache.lastUpdated > cacheTimeoutMillis) {
-    const timeSinceUpdate = currentTime - memCache.lastUpdated;
+  } else if (currentTime - menuCache.lastUpdated > cacheTimeoutMillis) {
+    const timeSinceUpdate = currentTime - menuCache.lastUpdated;
     console.log(name + "cache expired: last updated " + timeSinceUpdate.toString() + " ms ago");
-    return false;
-  } else if (currentDay !== new Date(memCache.lastUpdated).getDay()) {
-    console.log(name + "cache is from a different day.");
     return false;
   } else {
     return true;
   }
 }
 
-export function getTodayMenuCreator(strategy: ICacheStrategy): () => Promise<ILocation[]> {
-  return async function(): Promise<ILocation[]> {
+export function getMenuCreator(strategy: ICacheStrategy): (date: Date) => Promise<ILocation[]> {
+  return async function(date: Date): Promise<ILocation[]> {
+
+    const datestr = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
     const currentDate = new Date();
-    const currentDay = currentDate.getDay();
     const currentTime = currentDate.valueOf();
 
-    if (isValidCache("Memory", memCache)) {
+    if (isValidCache("Memory", memCache[datestr])) {
       console.log("Recent menu exists in memory");
-      return memCache.content;
+      return memCache[datestr].content;
     } else {
       console.log("Recent menu does not exist in memory");
     }
 
-    if (strategy.exists()) {
+    if (await strategy.exists(datestr)) {
       console.log("Menu exists in disk cache");
-      memCache = await strategy.read();
-      if (isValidCache("Disk", memCache)) {
+      memCache[datestr] = await strategy.read(datestr);
+      if (isValidCache("Disk", memCache[datestr])) {
         console.log("Disk cache is recent");
-        return memCache.content;
+        return memCache[datestr].content;
       } else {
         console.log("Disk cache is out of date");
       }
@@ -52,10 +54,10 @@ export function getTodayMenuCreator(strategy: ICacheStrategy): () => Promise<ILo
       console.log("Menu does not exist in disk cache");
     }
 
-    if (memCache == null && await strategy.exists()) {
+    if (memCache == null && await strategy.exists(datestr)) {
       console.log("Menu exists in cache");
-      memCache = await strategy.read();
-    } else if (memCache) {
+      memCache[datestr] = await strategy.read(datestr);
+    } else if (memCache[datestr]) {
       console.log("Menu exists in memory");
     } else {
       console.log("File does not exist in cache or memory");
@@ -64,13 +66,13 @@ export function getTodayMenuCreator(strategy: ICacheStrategy): () => Promise<ILo
     console.log("Fetching menu from internet and updating cache");
     const food = await getFood(currentDate);
 
-    memCache = {
+    memCache[datestr] = {
       lastUpdated: currentTime,
       content: food,
     };
 
-    await strategy.write(memCache);
+    await strategy.write(datestr, memCache[datestr]);
 
-    return memCache.content;
+    return memCache[datestr].content;
   };
 }

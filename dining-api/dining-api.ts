@@ -22,7 +22,6 @@ export default async function(date): Promise<any> {
 
   const school: ISchool = await schoolResp.json();
   const locations = school.locations;
-  console.log(locations);
 
   const menuProms: Array<Promise<Response>> = locations.map((locId) => fetch(apiLoc +
     "/location/menu.json?date=" + dateStr +

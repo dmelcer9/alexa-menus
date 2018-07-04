@@ -30,4 +30,11 @@ module.exports = {
       { test: /\.ts(x?)$/, loader: 'ts-loader' },
     ],
   },
+  resolve:{
+    mainFields:[
+      "main",
+      "module"
+    ],
+    extensions: ['.ts', '.json', '.js']
+  }
 };

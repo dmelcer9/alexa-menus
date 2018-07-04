@@ -1,6 +1,6 @@
 
 import * as AWS from "aws-sdk";
-import { ICacheStrategy, IMenuCache } from "./strategy";
+import { getFileName, ICacheStrategy, IMenuCache } from "./strategy";
 AWS.config.update({region: "us-east-1"});
 
 const S3 = new AWS.S3();
@@ -8,10 +8,10 @@ const bucket = "dining-cache";
 const fname = "foodCache.json";
 
 export const AWSBucketStrategy: ICacheStrategy = {
-  async exists() {
+  async exists(date: string) {
     const params = {
       Bucket: bucket,
-      Key: fname,
+      Key: getFileName(date),
     };
     try {
       const ret = await S3.headObject(params).promise();
@@ -27,20 +27,20 @@ export const AWSBucketStrategy: ICacheStrategy = {
 
   },
 
-  async read(): Promise<IMenuCache> {
+  async read(date: string): Promise<IMenuCache> {
     const params = {
       Bucket: bucket,
-      Key: fname,
+      Key: getFileName(date),
     };
 
     const ret = await S3.getObject(params).promise();
     return JSON.parse(ret.Body.toString());
   },
 
-  async write(obj: IMenuCache) {
+  async write(date: string, obj: IMenuCache) {
     const params = {
       Bucket: bucket,
-      Key: fname,
+      Key: getFileName(date),
       Body: JSON.stringify(obj),
     };
 

@@ -1,16 +1,16 @@
 import * as fs from "fs-extra";
-import { ICacheStrategy, IMenuCache } from "./strategy";
+import { getFileName, ICacheStrategy, IMenuCache } from "./strategy";
 
 export const LocalFileCacheStrategy: ICacheStrategy = {
-  async exists() {
-    return await fs.pathExists("foodCache.json");
+  async exists(date: string) {
+    return await fs.pathExists(getFileName(date));
   },
 
-  async read() {
-    return await fs.readJson("foodCache.json");
+  async read(date: string) {
+    return await fs.readJson(getFileName(date));
   },
 
-  async write(obj: IMenuCache) {
-    await fs.writeJson("foodCache.json", JSON.stringify(obj));
+  async write(date: string, obj: IMenuCache) {
+    await fs.writeJson(getFileName(date), JSON.stringify(obj));
   },
 };

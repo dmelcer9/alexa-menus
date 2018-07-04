@@ -1,11 +1,8 @@
-import * as admin from "firebase-admin";
+import {db} from "./handler";
 
-import serviceAccount = require("./firebase-key.json");
-
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-    databaseURL: "https://alexa-dining.firebaseio.com",
-});
+function getFavoritesPath(userId) {
+  return "users/" + procesString(userId) + "/favorites";
+}
 
 function procesString(str) {
     return str.toLowerCase().split(" ").join("").split(".").join("");
@@ -13,9 +10,7 @@ function procesString(str) {
 
 export function getFavoritesFromDB(userId) {
 
-    const db = admin.database();
-
-    const ref = db.ref(procesString(userId)).orderByValue();
+    const ref = db.ref(getFavoritesPath(userId)).orderByValue();
 
     return new Promise((accept, reject) => {
       ref.once("value", function(value) {
@@ -28,21 +23,21 @@ export function getFavoritesFromDB(userId) {
         accept(favorites);
       }, (error) => {
         reject(error);
-        db.goOffline();
+
       });
     });
   }
 
 export function addFavoriteToDB(userId, favorite) {
-    const db = admin.database();
-    const ref = db.ref(procesString(userId));
+
+    const ref = db.ref(getFavoritesPath(userId));
 
     return new Promise((accept, reject) => {
         ref.push({
           realName: favorite,
           shortName: procesString(favorite),
         }, (error) => {
-          db.goOffline();
+
           if (error) {
             reject(error);
           } else {
@@ -53,26 +48,26 @@ export function addFavoriteToDB(userId, favorite) {
   }
 
 export function removeFavoriteFromDB(userId, favorite) {
-    const db = admin.database();
-    const ref = db.ref(procesString(userId));
+
+    const ref = db.ref(getFavoritesPath(userId));
     return new Promise((accept, reject) => {
       ref.orderByChild("shortName").equalTo(procesString(favorite)).once("value", (snapshot) => {
         snapshot.forEach((node) => {
           node.ref.remove();
           return false;
         });
-        db.goOffline();
+
         accept();
 
       }, () => {
-        db.goOffline();
+
         reject(); });
     });
 
   }
 
 export async function removeAllFromDB(userId) {
-    const db = admin.database();
-    const ref = db.ref(procesString(userId));
+
+    const ref = db.ref(getFavoritesPath(userId));
     return await ref.remove();
   }
