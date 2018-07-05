@@ -6,7 +6,7 @@ import { HelpIntent } from "./intenthandlers/helpIntent";
 
 import * as admin from "firebase-admin";
 
-import serviceAccount = require("./firebase-key.json");
+import serviceAccount = require("../firebase-key.json");
 import { RemoveFromFavoritesIntent } from "./intenthandlers/removefromfavoritesintent";
 
 export let db: admin.database.Database;

@@ -13,11 +13,11 @@ provider:
 functions:
   diningAsk:
     memorySize: 512
-    handler: handler.handler
+    handler: src/handler.handler
     events:
       - alexaSkill: amzn1.ask.skill.c857c13e-1052-45ab-b590-e1a7a5546407
   diningRefresh:
-    handler: refreshhandler.handler
+    handler: src/refreshhandler.handler
     memorySize: 512
     timeout: 60
     events:
