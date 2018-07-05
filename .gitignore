@@ -8,4 +8,8 @@ jspm_packages
 # Webpack directories
 .webpack
 
+# coverage
+coverage
+.nyc_output
+
 firebase-key.json

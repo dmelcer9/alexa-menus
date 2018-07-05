@@ -19,12 +19,17 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.22",
+    "@types/chai": "^4.1.4",
+    "@types/mocha": "^5.2.4",
     "@types/node": "^8.10.20",
     "@types/node-fetch": "^2.1.1",
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
     "serverless": "^1.27.3",
     "serverless-webpack": "^4.0.0",
     "ts-loader": "^2.3.7",
-    "typescript": "^2.5.2",
+    "ts-node": "^7.0.0",
+    "typescript": "^2.9.2",
     "webpack": "^3.6.0"
   },
   "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
