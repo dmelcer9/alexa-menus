@@ -22,4 +22,4 @@ functions:
     timeout: 60
     events:
       - schedule:
-          rate: rate(10 minutes)
+          rate: rate(60 minutes)

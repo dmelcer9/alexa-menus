@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import { Response } from "node-fetch";
 import { ILocation, IMenu } from "./diningInterface";
 
-const apiLoc = "https://www.dineoncampus.com/v1";
+const apiLoc = "https://api.dineoncampus.com/v1";
 
 const schoolId = "5751fd2b90975b60e048929a";
 
